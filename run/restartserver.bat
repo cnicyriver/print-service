@@ -1,0 +1,2 @@
+forever restartall
+pause

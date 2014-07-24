@@ -1,0 +1,23 @@
+{
+  "name": "dfl-node",
+  "description": "dfl-node",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "async": "*",
+    "coffee-script": "^1.7.1",
+    "ffi": "^1.2.7",
+    "iconv-lite": "^0.4.4",
+    "moment": "*",
+    "mysql": "^2.4.1",
+    "nconf": "*",
+    "nodemailer": "*",
+    "orm": "^2.1.16",
+    "ref": "^0.3.2",
+    "request": "*",
+    "request-as-curl": "*",
+    "restify": "*",
+    "restify-oauth2": "*",
+    "string": "*"
+  }
+}
