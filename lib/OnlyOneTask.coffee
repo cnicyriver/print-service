@@ -2,7 +2,7 @@
 # 注册一个唯一的任务，分配给子进程来执行。子进程执行结束后通知主进程
 
 cluster = require 'cluster'
-
+moment = require 'moment'
 
 taskList = {}
 
@@ -11,20 +11,33 @@ getOneRandomWorker = ->
 	list = (worker for id,worker of cluster.workers)
 	(list.sort -> Math.random() < 0.5)[0]
 
+# 消息格式：
+# msg:json对象属性：
+# taskName:任务名称
+# result:子进程处理的结果作为该参数传递给主进程
+# type : 'run'/'complete'/'exec'
+# 	run: 主-》子
+# 	complete：子-》主
+# 	exec：子-》主
+# 
+
+
 # 挂上消息钩子
 if cluster.isMaster
 	cluster.on 'listening',(worker,address)->
 		worker.on 'message',(msg)->
 			# console.log '主进程接收到消息'
 			if typeof msg is 'object' and OnlyOneTask[msg.taskName]
-				OnlyOneTask[msg.taskName].status = false
-				OnlyOneTask[msg.taskName].callback(msg.result)
+				if msg.type is 'exec'
+					OnlyOneTask[msg.taskName].exec()
+				else if msg.type is 'complete'
+					OnlyOneTask[msg.taskName].status = false
+					OnlyOneTask[msg.taskName].callback(msg.result)
 else
 	process.on 'message',(msg)->
-		# console.log '子进程',cluster.worker.id,'接收到消息'
-		if typeof msg is 'object' and OnlyOneTask[msg.taskName]
+		# console.log moment(new Date()).format('YYYYMMDDHHmmssSSS'),'子进程',cluster.worker.id,'接收到消息',msg.taskName
+		if typeof msg is 'object' and OnlyOneTask[msg.taskName] and msg.type is 'run'
 			OnlyOneTask[msg.taskName].run()
-		
 
 
 Task = (@name)->
@@ -64,7 +77,6 @@ Task.prototype =
 	# 设置子进程完成后的回调，for master
 	setComplete : (task)->
 		@callback = task if task
-
 
 OnlyOneTask = 
 	# both worker and master

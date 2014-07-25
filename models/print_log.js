@@ -58,6 +58,9 @@
       print_nums: {
         type: 'integer',
         size: 11
+      },
+      print_sort: {
+        type: 'integer'
       }
     }, {
       id: 'print_log_id',
@@ -73,7 +76,7 @@
             return function(err) {
               var beforeStauts, result;
               if (err || !_this.printIP) {
-                return callback(err, _this);
+                return callback(_this);
               }
               result = Pos.print(_this.printIP, _this.print_message);
               beforeStauts = _this.is_ok;
@@ -82,9 +85,9 @@
                 _this.is_ok = CONST.error;
               }
               _this.print_nums++;
-              console.log(moment(new Date()).format('YYYYMMDDHHmmssSSS'), '进程id', cluster.worker.id, '日志id', _this.print_log_id, _this.is_ok, beforeStauts, _this.print_nums, result);
+              console.log(moment(new Date()).format('YYYYMMDDHHmmssSSS'), '进程id,日志ID,当前,之前,结果,打印次数', cluster.worker.id, _this.print_log_id, _this.is_ok, beforeStauts, result, _this.print_nums);
               return _this.save(function(err) {
-                return callback(err, _this);
+                return callback(_this);
               });
             };
           })(this));
@@ -122,37 +125,18 @@
         };
       })(this));
     };
-    print_log.loopPrint = function(trans_id, callback) {
+    print_log.loopPrint = function(callback) {
       if (callback == null) {
         callback = function() {};
       }
-      if (!trans_id) {
-        trans_id = Math.random();
-        db.models.print_log.find({
-          is_ok: 0,
-          trans_id: null
-        }).each(function(print_log) {
-          return print_log.trans_id = trans_id;
-        }).save((function(_this) {
-          return function(err) {
-            return _this.loopPrint(trans_id, callback);
-          };
-        })(this));
-        return;
-      }
-      return this.one({
-        is_ok: CONST.waiting,
-        trans_id: trans_id
-      }, (function(_this) {
-        return function(err, log) {
-          if (err || !log) {
-            return callback();
-          }
-          return log.print(function() {
-            return _this.loopPrint(trans_id, callback);
-          });
-        };
-      })(this));
+      return this.find({
+        is_ok: CONST.waiting
+      }).limit(1).order('print_sort').run(function(err, list) {
+        if (err || !list || list.length === 0) {
+          return callback();
+        }
+        return list[0].print(callback);
+      });
     };
     print_log.clearOld = function(callback) {
       var clearTimes, lastTime;
@@ -169,7 +153,7 @@
       }).remove(callback);
     };
     return print_log.checkTimeoutLogs = function(callback) {
-      var lastTime, self, timeOut;
+      var lastTime, timeOut;
       if (callback == null) {
         callback = function() {};
       }
@@ -178,28 +162,12 @@
         return callback();
       }
       lastTime = (new Date().getTime() - timeOut) / 1000;
-      self = this;
-      return async.parallel({
-        find: function(cb) {
-          return self.find({
-            print_time: orm.lt(lastTime),
-            is_ok: CONST.printing
-          }).each(function(log) {
-            return log.is_ok = CONST.error;
-          }).save(cb);
-        },
-        find1: function(cb) {
-          return self.find({
-            addtime: orm.lt(lastTime),
-            is_ok: CONST.waiting
-          }).each(function(log) {
-            log.is_ok = CONST.waiting;
-            return log.trans_id = null;
-          }).save(cb);
-        }
-      }, function(err, result) {
-        return callback();
-      });
+      return this.find({
+        print_time: orm.lt(lastTime),
+        is_ok: CONST.printing
+      }).each(function(log) {
+        return log.is_ok = CONST.waiting;
+      }).save(callback);
     };
   };
 
