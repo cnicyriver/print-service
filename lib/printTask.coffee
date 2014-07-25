@@ -33,9 +33,10 @@ module.exports = (db)->
 		# 检测打印机任务
 		OnlyOneTask.define 'checkPrintTask',(callback)->
 			db.models.print_manage.getOneEarlyChecked (err,print)->
+				console.log '检测打印机',cluster.worker.id,print.printIP,print.print_manage_id
 				return callback() if not print
 				print.queryStatus (err,print)->
-					return callback(print) if print.print_staus is 0
+					return callback(print) if print.print_status is 0
 					db.models.print_log.loopFill print.print_manage_id,->
 						callback(print)
 		# 清除过时的日志
