@@ -85,7 +85,7 @@
                 _this.is_ok = CONST.error;
               }
               _this.print_nums++;
-              console.log(moment(new Date()).format('YYYYMMDDHHmmssSSS'), '进程id,日志ID,当前,之前,结果,打印次数', cluster.worker.id, _this.print_log_id, _this.is_ok, beforeStauts, result, _this.print_nums);
+              console.log(moment(new Date()).format('HH:mm:ss SSS'), '进程,日志,当前,之前,结果,打印次数', cluster.worker.id, _this.print_log_id, _this.is_ok, beforeStauts, result, _this.print_nums);
               return _this.save(function(err) {
                 return callback(_this);
               });

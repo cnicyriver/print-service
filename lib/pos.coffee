@@ -256,9 +256,9 @@ Print =
 		return 'OpenError' if not @open(ip)
 		return 'POS_SetMotionUnit' if Pos.POS_SetMotionUnit(180,180) isnt POSC.POS_SUCCESS
 		return 'POS_SetMode' if Pos.POS_SetMode(POSC.POS_PRINT_MODE_STANDARD) isnt POSC.POS_SUCCESS
-		if ip is '192.168.1.222'
-			@close()
-			return 0
+		# if ip is '192.168.1.222'
+		# 	@close()
+		# 	return 0
 			
 
 
