@@ -6,55 +6,27 @@ restify = require 'restify'
 curlify = require 'request-as-curl'
 async = require 'async'
 paging = require './lib/paging'
+OnlyOneTask = require './lib/OnlyOneTask'
 
 
-
-# 是否正在检测打印机列表状态
-checkingPrintList = false
-# 最后一次检测打印机列表的时间。
-lastCheckingTime = null
-# 是否正在处理打印日志
-checkingPrintLogList = false
 
 if cluster.isMaster
-	# 注册消息处理
-	regMessage = (worker)->
-		worker.on 'message',(msg)->
-			# 接收到子进程消息后，再回传给子进程，交给子进程处理
-			# console.log worker.id,'recv msg from worker:',msg
-			# 子进程检测打印机列表完毕
-			return checkingPrintList = false  if msg is 'checkingPrintListComplete'
-				# console.log '接收到子进程的消息'
-			return checkingPrintLogList = false if msg is 'checkingPrintLogListComplete'
-			getRanWorker().send msg
-		worker.on 'listening',(msg)->
-			checkingPrintList = false
-	# 随机获取一个子进程，简单的实现负载均衡
-	getRanWorker = ->
-		i = j = 0
-		i++ for id of cluster.workers
-		j = Math.floor(Math.random() * i)
-		i = 0
-		for id,worker of cluster.workers
-			return worker if i is j
-			i++
 	if nconf.get 'print:autoCheckPrint'
-		# 防止子进程崩溃后检测流程中断。checkingPrintList一直处于true状态，通过验证最后一次检测时间，重新启动检测
+		# 注册一个唯一任务
+		printTask = OnlyOneTask.define 'printTask',(print)->
+			if print 
+				printTask.exec() 
+				console.log print.print_manage_id
+		# 任务中断检测间隔
+		printTask.crashTime = nconf.get('print:checkCrashTime') or 10000
 		setInterval ->
-			checkingPrintList = false if new Date() - lastCheckingTime > nconf.get 'print:checkCrashTime'
-			# 只有收到子进程检测完毕消息后才会继续检测
-			return if checkingPrintList
-			checkingPrintList = true
-			lastCheckingTime = new Date()
-			# 定时检测打印机状态
-			getRanWorker().send 'checkPrintStatus'
+			printTask.exec()
 		,2000
 	# 根据cpu数量开启多个子进程
-	regMessage cluster.fork() for i in [1..require('os').cpus().length]
+	cluster.fork() for i in [1..require('os').cpus().length]
 	cluster.on 'exit',(worker)->
-		# 子进程挂掉之后，重开一个子进程并注册消息
-		regMessage cluster.fork()
-	return;
+		cluster.fork()
+	return
 
 user = nconf.get 'mysql:user'
 password = nconf.get 'mysql:password'
@@ -95,7 +67,21 @@ orm.connect "mysql://#{user}:#{password}@#{host}/#{db}",(err,db)->
 	require('./models/print_manage') db
 	require('./routes/service.print') server
 
-	# return;
+
+
+	OnlyOneTask.define 'printTask',(callback)->
+		db.models.print_log.clearOld() #清除过时的日志
+		db.models.print_log.checkTimeoutLogs() #检测超时的记录
+		db.models.print_log.loopPrint() #同时检测打印队列
+		db.models.print_manage.getOneEarlyChecked (err,print)->
+			return callback() if not print
+			print.queryStatus (err,print)->
+				return callback(print) if print.print_staus is 0
+				db.models.print_log.loopFill print.print_manage_id,->
+					callback(print)
+
+
+	return;
 	process.on 'message',(msg)->
 		# console.log cluster.worker.id,'recv msg from master:',msg
 		switch msg
