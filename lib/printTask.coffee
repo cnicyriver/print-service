@@ -35,7 +35,7 @@ module.exports = (db)->
 		OnlyOneTask.define 'checkPrintTask',(callback)->
 			db.models.print_manage.getOneEarlyChecked (err,print)->
 				return callback() if not print
-				console.log '检测打印机',cluster.worker.id,print.printIP,print.print_manage_id
+				# console.log '检测打印机',cluster.worker.id,print.printIP,print.print_manage_id
 				print.queryStatus (err,print)->
 					return callback(print) if print.print_status is 0
 					db.models.print_log.loopFill print.print_manage_id,->
