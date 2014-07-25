@@ -1,5 +1,5 @@
 Pos = require '../lib/pos'
-
+log = require '../lib/log'
 
 moment = require 'moment'
 
@@ -9,7 +9,7 @@ module.exports = (server)->
 		next()
 
 	server.get '/service/print/notice',(req,res,next)->
-		console.log '客户端请求打印'
+		log '客户端请求打印'
 		process.send 
 			taskName:'loopPrintTask'
 			type: 'exec'

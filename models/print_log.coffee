@@ -4,6 +4,7 @@ orm = require 'orm'
 moment = require 'moment'
 cluster = require 'cluster'
 async = require 'async'
+log = require '../lib/log'
 
 CONST = 
 	waiting:0 # 0：等待打印
@@ -45,7 +46,7 @@ module.exports = (db)->
 					# 返回OpenError标识为打印机故障，其他则为打印失败。打印失败的不会自动补打。
 					@is_ok = CONST.error if result is 'OpenError'
 					@print_nums++
-					console.log moment(new Date()).format('HH:mm:ss SSS'),'进程,日志……',cluster.worker.id,@print_log_id,initStatus,beforeStauts,@is_ok,result,@print_nums
+					log "进程,日志……#{cluster.worker.id},#{@print_log_id},#{initStatus},#{beforeStauts},#{@is_ok},#{result},#{@print_nums}"
 					@save (err)=>
 						callback @
 	# 查找一条处于某个状态的打印日志
@@ -93,8 +94,8 @@ module.exports = (db)->
 		@find
 			print_time: orm.lt lastTime
 			is_ok : CONST.printing
-		.each (log)->
-			log.is_ok = CONST.waiting
+		.each (print_log)->
+			print_log.is_ok = CONST.waiting
 		.save callback
 
 
