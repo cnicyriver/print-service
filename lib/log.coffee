@@ -9,5 +9,6 @@ logFileName = '_error.txt'
 
 # 写入日志
 module.exports = (msg,callback=->)->
+	return;
 	logPath  = path.join __dirname , logFolder + moment(new Date()).format('YYYY-MM-DD') + logFileName
 	fs.appendFile path,moment(new Date()).format('YYYY-MM-DD HH:mm:ss SSS') + ' ' + msg + '\r\n',callback
