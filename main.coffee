@@ -19,8 +19,8 @@ if cluster.isMaster
 user = nconf.get 'mysql:user'
 password = nconf.get 'mysql:password'
 host = nconf.get 'mysql:host'
-dbname = nconf.get 'mysql:dbname'
-orm.connect "mysql://#{user}:#{password}@#{host}/#{dbname}",(err,db)->
+db = nconf.get 'mysql:db'
+orm.connect "mysql://#{user}:#{password}@#{host}/#{db}",(err,db)->
 	if err 
 		console.log 'Cannot connect to Mysql.'
 		throw err

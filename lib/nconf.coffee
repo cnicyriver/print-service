@@ -7,7 +7,7 @@ nconf.defaults
 		'host':'localhost'
 		'user':'root'
 		'password':'sa'
-		'dbname':'daofulin_sell'
+		'db':'daofulin_sell'
 		'charset':'utf8'
 	'server':
 		'port':8080
