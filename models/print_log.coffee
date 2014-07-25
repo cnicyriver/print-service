@@ -32,6 +32,7 @@ module.exports = (db)->
 			# 打印
 			# 回调参数：err,this
 			print:(callback=->)->
+				initStatus = @is_ok
 				@is_ok = if @printIP then CONST.printing else CONST.other
 				@print_time = new Date().getTime() / 1000
 				@trans_id = null
@@ -44,7 +45,7 @@ module.exports = (db)->
 					# 返回OpenError标识为打印机故障，其他则为打印失败。打印失败的不会自动补打。
 					@is_ok = CONST.error if result is 'OpenError'
 					@print_nums++
-					console.log moment(new Date()).format('HH:mm:ss SSS'),'进程,日志,当前,之前,结果,打印次数',cluster.worker.id,@print_log_id,@is_ok,beforeStauts,result,@print_nums
+					console.log moment(new Date()).format('HH:mm:ss SSS'),'进程,日志',cluster.worker.id,@print_log_id,initStatus,beforeStauts,@is_ok,result,@print_nums
 					@save (err)=>
 						callback @
 	# 查找一条处于某个状态的打印日志
