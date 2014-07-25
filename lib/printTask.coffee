@@ -9,7 +9,7 @@ module.exports = (db)->
 		if nconf.get 'print:autoCheckPrint'
 			# 注册一个唯一任务
 			checkPrintTask = OnlyOneTask.define 'checkPrintTask',(print)->
-				console.log '检测打印机完成', not print
+				# console.log '检测打印机完成', not print
 				if print 
 					checkPrintTask.exec() 
 					# console.log moment(new Date()).format('YYYYMMDDHHmmssSSS'),print.print_manage_id
